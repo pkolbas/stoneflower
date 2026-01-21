@@ -1,5 +1,8 @@
 import type { Plant, PlantSpecies, User, CreatePlantDto, UpdatePlantDto, CareActionDto, PlantMessage, CareAction } from '@/types';
 
+// Re-export types for convenience
+export type { CreatePlantDto, UpdatePlantDto, CareActionDto } from '@/types';
+
 const API_BASE = '/api';
 
 function getInitData(): string {

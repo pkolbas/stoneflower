@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Droplets, Leaf } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';

@@ -214,7 +214,7 @@ export async function seedSpecies() {
   for (const sp of species) {
     await prisma.plantSpecies.upsert({
       where: { scientificName: sp.scientificName },
-      update: sp,
+      update: sp as any,
       create: sp as any,
     });
   }

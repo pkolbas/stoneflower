@@ -2,7 +2,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
-RUN npm ci
+RUN npm install
 RUN npx prisma generate
 
 FROM node:20-alpine AS builder
@@ -21,7 +21,7 @@ ENV PORT=3001
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 expressjs
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 COPY prisma ./prisma
 RUN npx prisma generate
 COPY --from=builder /app/dist ./dist

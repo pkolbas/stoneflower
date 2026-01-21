@@ -46,6 +46,7 @@ export interface Plant {
   updatedAt: string;
   species: PlantSpecies | null;
   wateringStatus?: WateringStatus;
+  messages?: PlantMessage[];
 }
 
 export interface WateringStatus {
