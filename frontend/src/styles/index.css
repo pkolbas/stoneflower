@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --tg-theme-bg-color: #ffffff;
+  --tg-theme-text-color: #000000;
+  --tg-theme-hint-color: #999999;
+  --tg-theme-link-color: #2481cc;
+  --tg-theme-button-color: #22c55e;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: #f4f4f5;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--tg-theme-bg-color);
+  color: var(--tg-theme-text-color);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Telegram Mini App specific styles */
+.tg-button {
+  @apply px-6 py-3 rounded-xl font-medium transition-all duration-200 active:scale-95;
+  background-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+}
+
+.tg-button:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.tg-card {
+  @apply rounded-2xl p-4 shadow-sm;
+  background-color: var(--tg-theme-secondary-bg-color);
+}
+
+.tg-input {
+  @apply w-full px-4 py-3 rounded-xl border-0 outline-none transition-all duration-200;
+  background-color: var(--tg-theme-secondary-bg-color);
+  color: var(--tg-theme-text-color);
+}
+
+.tg-input:focus {
+  @apply ring-2 ring-plant-green-500;
+}
+
+.tg-input::placeholder {
+  color: var(--tg-theme-hint-color);
+}
+
+/* Message bubble styles */
+.message-bubble {
+  @apply relative max-w-[85%] rounded-2xl px-4 py-3;
+}
+
+.message-bubble-plant {
+  @apply bg-plant-green-100 text-plant-green-900 rounded-bl-sm;
+}
+
+.message-bubble-user {
+  @apply bg-water-blue-100 text-water-blue-900 rounded-br-sm ml-auto;
+}
+
+/* Plant status indicators */
+.status-ok {
+  @apply bg-plant-green-100 text-plant-green-700;
+}
+
+.status-soon {
+  @apply bg-yellow-100 text-yellow-700;
+}
+
+.status-overdue {
+  @apply bg-orange-100 text-orange-700;
+}
+
+.status-critical {
+  @apply bg-red-100 text-red-700;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(20deg); }
+  75% { transform: rotate(-20deg); }
+}
+
+.animate-wave {
+  animation: wave 2s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Safe area for mobile */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tg-theme-hint-color);
+  border-radius: 2px;
+}
+
+/* Plant card hover effect */
+.plant-card {
+  @apply transition-all duration-200;
+}
+
+.plant-card:active {
+  @apply scale-[0.98];
+}

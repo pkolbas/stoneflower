@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(uuid())
+  telegramId      BigInt    @unique
+  username        String?
+  firstName       String?
+  lastName        String?
+  languageCode    String    @default("ru")
+  timezone        String    @default("Europe/Moscow")
+  notificationsEnabled Boolean @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  plants          Plant[]
+  careActions     CareAction[]
+
+  @@index([telegramId])
+}
+
+model PlantSpecies {
+  id                  String   @id @default(uuid())
+  scientificName      String   @unique
+  commonNameRu        String
+  commonNameEn        String?
+  description         String?
+  imageUrl            String?
+
+  // Care requirements
+  wateringFrequencyDays Int      @default(7)
+  wateringWinterMultiplier Float @default(0.75)
+  wateringSummerMultiplier Float @default(1.25)
+
+  lightLevel          LightLevel @default(MEDIUM)
+  humidityLevel       HumidityLevel @default(MEDIUM)
+  temperatureMin      Int        @default(18)
+  temperatureMax      Int        @default(25)
+
+  // Care tips
+  lightingTips        String?
+  wateringTips        String?
+  humidityTips        String?
+  feedingTips         String?
+  repottingTips       String?
+  pruningTips         String?
+
+  plants              Plant[]
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([scientificName])
+  @@index([commonNameRu])
+}
+
+model Plant {
+  id              String    @id @default(uuid())
+  userId          String
+  speciesId       String?
+
+  nickname        String
+  customSpecies   String?
+  photoUrl        String?
+  location        String?
+  potSize         PotSize   @default(MEDIUM)
+
+  acquiredAt      DateTime  @default(now())
+  lastWateredAt   DateTime?
+  nextWateringAt  DateTime?
+
+  // Custom watering schedule (overrides species default)
+  customWateringDays Int?
+
+  // Plant personality for messages
+  personality     PlantPersonality @default(FRIENDLY)
+
+  isArchived      Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species         PlantSpecies? @relation(fields: [speciesId], references: [id])
+
+  careActions     CareAction[]
+  messages        PlantMessage[]
+
+  @@index([userId])
+  @@index([nextWateringAt])
+}
+
+model CareAction {
+  id          String      @id @default(uuid())
+  plantId     String
+  userId      String
+  actionType  CareActionType
+  notes       String?
+  photoUrl    String?
+  createdAt   DateTime    @default(now())
+
+  plant       Plant       @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([plantId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model PlantMessage {
+  id          String      @id @default(uuid())
+  plantId     String
+  messageType MessageType
+  content     String
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+
+  plant       Plant       @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId])
+  @@index([createdAt])
+}
+
+model ScheduledNotification {
+  id              String    @id @default(uuid())
+  telegramChatId  BigInt
+  plantId         String
+  plantNickname   String
+  notificationType NotificationType
+  scheduledFor    DateTime
+  sentAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@index([scheduledFor])
+  @@index([telegramChatId])
+}
+
+enum LightLevel {
+  LOW
+  MEDIUM
+  HIGH
+  DIRECT
+}
+
+enum HumidityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum PotSize {
+  TINY
+  SMALL
+  MEDIUM
+  LARGE
+  XLARGE
+}
+
+enum PlantPersonality {
+  FRIENDLY
+  SHY
+  DRAMATIC
+  WISE
+  PLAYFUL
+}
+
+enum CareActionType {
+  WATERING
+  FERTILIZING
+  REPOTTING
+  PRUNING
+  MISTING
+  ROTATING
+  CLEANING
+  OTHER
+}
+
+enum MessageType {
+  WATERING_REMINDER
+  WATERING_THANKS
+  GREETING
+  MILESTONE
+  WEATHER_WARNING
+  TIP
+  SOS
+}
+
+enum NotificationType {
+  WATERING
+  FERTILIZING
+  GENERAL
+}

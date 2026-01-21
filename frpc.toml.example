@@ -1,0 +1,12 @@
+serverAddr = "YOUR_SERVER_HERE"
+serverPort = 7200
+
+auth.method = "token"
+auth.token = "YOUR_TOKEN_HERE"
+
+[[proxies]]
+name = "http"
+type = "tcp"
+localIP = "127.0.0.1"
+localPort = 5173
+remotePort = 3001
