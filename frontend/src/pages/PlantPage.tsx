@@ -14,6 +14,7 @@ import MessageBubble from '@/components/MessageBubble';
 import CareTipCard from '@/components/CareTipCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { hapticFeedback, showConfirm, showBackButton, hideBackButton } from '@/utils/telegram';
+import { useStore } from '@/hooks/useStore';
 import * as api from '@/utils/api';
 import type { Plant, PlantMessage, CareAction } from '@/types';
 
@@ -22,6 +23,7 @@ type Tab = 'chat' | 'care' | 'history';
 export default function PlantPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const deletePlantFromStore = useStore((state) => state.deletePlant);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [showMenu, setShowMenu] = useState(false);
   const [isWatering, setIsWatering] = useState(false);
@@ -116,7 +118,7 @@ export default function PlantPage() {
     if (confirmed) {
       hapticFeedback('medium');
       try {
-        await api.deletePlant(plant.id);
+        await deletePlantFromStore(plant.id);
         navigate('/');
       } catch {
         hapticFeedback('error');
