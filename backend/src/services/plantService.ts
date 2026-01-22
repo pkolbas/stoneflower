@@ -48,11 +48,14 @@ export async function createPlant(userId: string, data: CreatePlantDto) {
     },
   });
 
-  return updatedPlant;
+  return {
+    ...updatedPlant,
+    wateringStatus: getWateringStatus(updatedPlant.nextWateringAt),
+  };
 }
 
 export async function getPlantById(plantId: string) {
-  return prisma.plant.findUnique({
+  const plant = await prisma.plant.findUnique({
     where: { id: plantId },
     include: {
       species: true,
@@ -66,6 +69,13 @@ export async function getPlantById(plantId: string) {
       },
     },
   });
+
+  if (!plant) return null;
+
+  return {
+    ...plant,
+    wateringStatus: getWateringStatus(plant.nextWateringAt),
+  };
 }
 
 export async function getUserPlants(userId: string, includeArchived = false) {
@@ -122,7 +132,7 @@ export async function updatePlant(plantId: string, data: UpdatePlantDto) {
       plant.lastWateredAt || new Date()
     );
 
-    return prisma.plant.update({
+    const updatedPlant = await prisma.plant.update({
       where: { id: plantId },
       data: { nextWateringAt },
       include: {
@@ -133,9 +143,17 @@ export async function updatePlant(plantId: string, data: UpdatePlantDto) {
         },
       },
     });
+
+    return {
+      ...updatedPlant,
+      wateringStatus: getWateringStatus(updatedPlant.nextWateringAt),
+    };
   }
 
-  return plant;
+  return {
+    ...plant,
+    wateringStatus: getWateringStatus(plant.nextWateringAt),
+  };
 }
 
 export async function deletePlant(plantId: string) {
