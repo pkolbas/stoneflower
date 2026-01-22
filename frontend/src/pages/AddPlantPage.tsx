@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Search, Check, ChevronRight } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { hapticFeedback, showBackButton, hideBackButton } from '@/utils/telegram';
+import {
+  useTelegramHaptic,
+  useTelegramBackButton,
+  useTelegramMainButton,
+  useTelegramClosingConfirmation,
+  useTelegram,
+} from '@/hooks/telegram';
 import * as api from '@/utils/api';
 import type { PlantSpecies, PlantPersonality, PotSize } from '@/types';
 
@@ -29,6 +35,8 @@ export default function AddPlantPage() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditMode = Boolean(id);
+  const { isTelegramWebApp } = useTelegram();
+  const haptic = useTelegramHaptic();
   const { species, isLoadingSpecies, fetchSpecies, createPlant, updatePlant } = useStore();
 
   const [step, setStep] = useState<Step>('species');
@@ -41,6 +49,16 @@ export default function AddPlantPage() {
   const [personality, setPersonality] = useState<PlantPersonality>('FRIENDLY');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingPlant, setIsLoadingPlant] = useState(false);
+
+  // Track if user has made changes (for closing confirmation)
+  const hasUnsavedChanges = !isEditMode && (
+    nickname.trim() !== '' ||
+    selectedSpecies !== null ||
+    customSpecies !== ''
+  );
+
+  // Enable closing confirmation when there are unsaved changes
+  useTelegramClosingConfirmation(hasUnsavedChanges);
 
   useEffect(() => {
     fetchSpecies();
@@ -66,7 +84,7 @@ export default function AddPlantPage() {
         // Skip to details step in edit mode
         setStep('details');
       } catch {
-        hapticFeedback('error');
+        haptic('error');
         navigate('/');
       } finally {
         setIsLoadingPlant(false);
@@ -74,27 +92,25 @@ export default function AddPlantPage() {
     }
 
     loadPlant();
-  }, [id, navigate]);
+  }, [id, navigate, haptic]);
 
-  useEffect(() => {
-    showBackButton(() => {
-      if (step === 'details') {
-        if (isEditMode) {
-          navigate(`/plant/${id}`);
-        } else {
-          setStep('species');
-        }
-      } else if (step === 'personality') {
-        setStep('details');
+  // BackButton handler
+  const handleBack = useCallback(() => {
+    if (step === 'details') {
+      if (isEditMode) {
+        navigate(`/plant/${id}`);
       } else {
-        navigate('/');
+        setStep('species');
       }
-    });
+    } else if (step === 'personality') {
+      setStep('details');
+    } else {
+      navigate('/');
+    }
+  }, [step, isEditMode, id, navigate]);
 
-    return () => {
-      hideBackButton();
-    };
-  }, [navigate, step, isEditMode, id]);
+  // Use Telegram BackButton
+  useTelegramBackButton(handleBack);
 
   const filteredSpecies = species.filter(
     (s) =>
@@ -104,36 +120,36 @@ export default function AddPlantPage() {
   );
 
   const handleSpeciesSelect = (sp: PlantSpecies) => {
-    hapticFeedback('selection');
+    haptic('selection');
     setSelectedSpecies(sp);
     setNickname(sp.commonNameRu);
     setStep('details');
   };
 
   const handleCustomSpecies = () => {
-    hapticFeedback('selection');
+    haptic('selection');
     setSelectedSpecies(null);
     setCustomSpecies(searchQuery);
     setNickname(searchQuery || 'Моё растение');
     setStep('details');
   };
 
-  const handleDetailsNext = () => {
+  const handleDetailsNext = useCallback(() => {
     if (!nickname.trim()) {
-      hapticFeedback('error');
+      haptic('error');
       return;
     }
-    hapticFeedback('selection');
+    haptic('selection');
     setStep('personality');
-  };
+  }, [nickname, haptic]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!nickname.trim()) {
-      hapticFeedback('error');
+      haptic('error');
       return;
     }
 
-    hapticFeedback('medium');
+    haptic('medium');
     setIsSubmitting(true);
 
     try {
@@ -146,7 +162,7 @@ export default function AddPlantPage() {
           potSize,
           personality,
         });
-        hapticFeedback('success');
+        haptic('success');
         navigate(`/plant/${id}`);
       } else {
         const plant = await createPlant({
@@ -157,15 +173,39 @@ export default function AddPlantPage() {
           potSize,
           personality,
         });
-        hapticFeedback('success');
+        haptic('success');
         navigate(`/plant/${plant.id}`);
       }
     } catch {
-      hapticFeedback('error');
+      haptic('error');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [nickname, isEditMode, id, selectedSpecies, customSpecies, location, potSize, personality, haptic, updatePlant, createPlant, navigate]);
+
+  // MainButton configuration
+  const mainButtonConfig = useMemo(() => {
+    if (step === 'species' || isLoadingPlant) return null;
+
+    if (step === 'details') {
+      return {
+        text: 'Далее',
+        onClick: handleDetailsNext,
+        isEnabled: nickname.trim() !== '',
+      };
+    }
+
+    // step === 'personality'
+    return {
+      text: isEditMode ? 'Сохранить' : 'Добавить растение',
+      onClick: handleSubmit,
+      isEnabled: !isSubmitting,
+      showProgress: isSubmitting,
+    };
+  }, [step, isLoadingPlant, nickname, isEditMode, isSubmitting, handleDetailsNext, handleSubmit]);
+
+  // Use Telegram MainButton
+  useTelegramMainButton(mainButtonConfig);
 
   if (isLoadingPlant) {
     return (
@@ -178,22 +218,10 @@ export default function AddPlantPage() {
   return (
     <div className="flex-1 flex flex-col safe-area-top">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-gray-100">
+      <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => {
-              if (step === 'details') {
-                if (isEditMode) {
-                  navigate(`/plant/${id}`);
-                } else {
-                  setStep('species');
-                }
-              } else if (step === 'personality') {
-                setStep('details');
-              } else {
-                navigate('/');
-              }
-            }}
+            onClick={handleBack}
             className="w-10 h-10 rounded-full bg-tg-secondary-bg flex items-center justify-center"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -255,9 +283,9 @@ export default function AddPlantPage() {
                 {/* Custom species option */}
                 <button
                   onClick={handleCustomSpecies}
-                  className="w-full tg-card flex items-center gap-3 text-left active:scale-[0.98] transition-transform border-2 border-dashed border-gray-200"
+                  className="w-full tg-card flex items-center gap-3 text-left active:scale-[0.98] transition-transform border-2 border-dashed border-gray-200 dark:border-gray-600"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
                     <span className="text-2xl">🪴</span>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -329,12 +357,12 @@ export default function AddPlantPage() {
                   <button
                     key={size.id}
                     onClick={() => {
-                      hapticFeedback('selection');
+                      haptic('selection');
                       setPotSize(size.id);
                     }}
                     className={`p-3 rounded-xl text-left transition-colors ${
                       potSize === size.id
-                        ? 'bg-plant-green-100 border-2 border-plant-green-500'
+                        ? 'bg-plant-green-100 border-2 border-plant-green-500 dark:bg-plant-green-900/30'
                         : 'bg-tg-secondary-bg border-2 border-transparent'
                     }`}
                   >
@@ -359,12 +387,12 @@ export default function AddPlantPage() {
                 <button
                   key={p.id}
                   onClick={() => {
-                    hapticFeedback('selection');
+                    haptic('selection');
                     setPersonality(p.id);
                   }}
                   className={`w-full p-4 rounded-xl flex items-center gap-4 transition-colors ${
                     personality === p.id
-                      ? 'bg-plant-green-100 border-2 border-plant-green-500'
+                      ? 'bg-plant-green-100 border-2 border-plant-green-500 dark:bg-plant-green-900/30'
                       : 'bg-tg-secondary-bg border-2 border-transparent'
                   }`}
                 >
@@ -383,8 +411,8 @@ export default function AddPlantPage() {
         )}
       </div>
 
-      {/* Bottom button */}
-      {(step === 'details' || step === 'personality') && (
+      {/* Fallback bottom button for non-Telegram browsers */}
+      {!isTelegramWebApp && (step === 'details' || step === 'personality') && (
         <div className="px-4 py-4 border-t border-gray-100 safe-area-bottom">
           <button
             onClick={step === 'details' ? handleDetailsNext : handleSubmit}

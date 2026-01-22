@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -13,7 +13,13 @@ import {
 import MessageBubble from '@/components/MessageBubble';
 import CareTipCard from '@/components/CareTipCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { hapticFeedback, showConfirm, showBackButton, hideBackButton } from '@/utils/telegram';
+import {
+  useTelegramHaptic,
+  useTelegramBackButton,
+  useTelegramMainButton,
+  useTelegramPopup,
+  useTelegram,
+} from '@/hooks/telegram';
 import { useStore } from '@/hooks/useStore';
 import * as api from '@/utils/api';
 import type { Plant, PlantMessage, CareAction } from '@/types';
@@ -23,6 +29,9 @@ type Tab = 'chat' | 'care' | 'history';
 export default function PlantPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { isTelegramWebApp } = useTelegram();
+  const haptic = useTelegramHaptic();
+  const { showConfirm } = useTelegramPopup();
   const deletePlantFromStore = useStore((state) => state.deletePlant);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [showMenu, setShowMenu] = useState(false);
@@ -76,17 +85,13 @@ export default function PlantPage() {
     navigate('/');
   }, [navigate]);
 
-  useEffect(() => {
-    showBackButton(handleBack);
-    return () => {
-      hideBackButton();
-    };
-  }, [handleBack]);
+  // Use Telegram BackButton
+  useTelegramBackButton(handleBack);
 
-  const handleWater = async () => {
+  const handleWater = useCallback(async () => {
     if (!plant || isWatering) return;
 
-    hapticFeedback('medium');
+    haptic('medium');
     setIsWatering(true);
 
     try {
@@ -100,13 +105,13 @@ export default function PlantPage() {
       setPlant(plantData);
       setMessages(messagesData);
       setCareHistory(historyData);
-      hapticFeedback('success');
+      haptic('success');
     } catch {
-      hapticFeedback('error');
+      haptic('error');
     } finally {
       setIsWatering(false);
     }
-  };
+  }, [plant, isWatering, haptic]);
 
   const handleDelete = async () => {
     if (!plant) return;
@@ -116,20 +121,55 @@ export default function PlantPage() {
     );
 
     if (confirmed) {
-      hapticFeedback('medium');
+      haptic('medium');
       try {
         await deletePlantFromStore(plant.id);
         navigate('/');
       } catch {
-        hapticFeedback('error');
+        haptic('error');
       }
     }
   };
 
   const handleTabChange = (tab: Tab) => {
-    hapticFeedback('selection');
+    haptic('selection');
     setActiveTab(tab);
   };
+
+  // MainButton configuration for watering
+  const status = plant?.wateringStatus?.status || 'ok';
+
+  const mainButtonConfig = useMemo(() => {
+    if (!plant || isLoading) return null;
+
+    const buttonText = status === 'critical'
+      ? 'Срочно полить!'
+      : status === 'overdue'
+      ? 'Пора полить'
+      : status === 'soon'
+      ? 'Полить сейчас'
+      : 'Полить';
+
+    const buttonColor = status === 'critical'
+      ? '#ef4444'
+      : status === 'overdue'
+      ? '#f97316'
+      : status === 'soon'
+      ? '#3b82f6'
+      : '#22c55e';
+
+    return {
+      text: buttonText,
+      onClick: handleWater,
+      isEnabled: !isWatering,
+      showProgress: isWatering,
+      color: buttonColor,
+      textColor: '#ffffff',
+    };
+  }, [plant, status, isWatering, handleWater, isLoading]);
+
+  // Use Telegram MainButton
+  useTelegramMainButton(mainButtonConfig);
 
   if (isLoading) {
     return (
@@ -150,8 +190,6 @@ export default function PlantPage() {
     );
   }
 
-  const status = plant.wateringStatus?.status || 'ok';
-
   // Combine messages and care actions for chat view
   const chatItems: Array<{ type: 'message' | 'action'; item: PlantMessage | CareAction; date: Date }> = [
     ...messages.map((m) => ({ type: 'message' as const, item: m, date: new Date(m.createdAt) })),
@@ -161,7 +199,7 @@ export default function PlantPage() {
   return (
     <div className="flex-1 flex flex-col safe-area-top">
       {/* Header */}
-      <div className="px-4 py-4 border-b border-gray-100">
+      <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/')}
@@ -195,7 +233,7 @@ export default function PlantPage() {
           <div className="relative">
             <button
               onClick={() => {
-                hapticFeedback('light');
+                haptic('light');
                 setShowMenu(!showMenu);
               }}
               className="w-10 h-10 rounded-full bg-tg-secondary-bg flex items-center justify-center"
@@ -209,13 +247,13 @@ export default function PlantPage() {
                   className="fixed inset-0 z-10"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg z-20 py-2 min-w-[160px]">
+                <div className="absolute right-0 top-12 bg-white dark:bg-tg-secondary-bg rounded-xl shadow-lg z-20 py-2 min-w-[160px]">
                   <button
                     onClick={() => {
                       setShowMenu(false);
                       navigate(`/edit/${plant.id}`);
                     }}
-                    className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50"
+                    className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
                     <Edit className="w-5 h-5 text-tg-hint" />
                     <span>Редактировать</span>
@@ -225,7 +263,7 @@ export default function PlantPage() {
                       setShowMenu(false);
                       handleDelete();
                     }}
-                    className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 text-red-500"
+                    className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 text-red-500"
                   >
                     <Trash2 className="w-5 h-5" />
                     <span>Удалить</span>
@@ -248,7 +286,7 @@ export default function PlantPage() {
               onClick={() => handleTabChange(id as Tab)}
               className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
                 activeTab === id
-                  ? 'bg-plant-green-100 text-plant-green-700'
+                  ? 'bg-plant-green-100 text-plant-green-700 dark:bg-plant-green-900/30 dark:text-plant-green-400'
                   : 'bg-tg-secondary-bg text-tg-hint'
               }`}
             >
@@ -320,37 +358,39 @@ export default function PlantPage() {
         )}
       </div>
 
-      {/* Water button */}
-      <div className="px-4 py-4 border-t border-gray-100 safe-area-bottom">
-        <button
-          onClick={handleWater}
-          disabled={isWatering}
-          className={`w-full py-4 rounded-2xl font-medium flex items-center justify-center gap-3 transition-all ${
-            status === 'ok'
-              ? 'bg-tg-secondary-bg text-tg-text'
-              : status === 'critical'
-              ? 'bg-red-500 text-white animate-pulse'
-              : 'bg-water-blue-500 text-white'
-          } ${isWatering ? 'opacity-70' : 'active:scale-[0.98]'}`}
-        >
-          {isWatering ? (
-            <LoadingSpinner size="sm" />
-          ) : (
-            <>
-              <Droplets className="w-6 h-6" />
-              <span>
-                {status === 'critical'
-                  ? 'Срочно полить!'
-                  : status === 'overdue'
-                  ? 'Пора полить'
-                  : status === 'soon'
-                  ? 'Полить сейчас'
-                  : 'Полить'}
-              </span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Fallback water button for non-Telegram browsers */}
+      {!isTelegramWebApp && (
+        <div className="px-4 py-4 border-t border-gray-100 safe-area-bottom">
+          <button
+            onClick={handleWater}
+            disabled={isWatering}
+            className={`w-full py-4 rounded-2xl font-medium flex items-center justify-center gap-3 transition-all ${
+              status === 'ok'
+                ? 'bg-tg-secondary-bg text-tg-text'
+                : status === 'critical'
+                ? 'bg-red-500 text-white animate-pulse'
+                : 'bg-water-blue-500 text-white'
+            } ${isWatering ? 'opacity-70' : 'active:scale-[0.98]'}`}
+          >
+            {isWatering ? (
+              <LoadingSpinner size="sm" />
+            ) : (
+              <>
+                <Droplets className="w-6 h-6" />
+                <span>
+                  {status === 'critical'
+                    ? 'Срочно полить!'
+                    : status === 'overdue'
+                    ? 'Пора полить'
+                    : status === 'soon'
+                    ? 'Полить сейчас'
+                    : 'Полить'}
+                </span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

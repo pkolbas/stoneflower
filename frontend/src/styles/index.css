@@ -12,6 +12,17 @@
   --tg-theme-secondary-bg-color: #f4f4f5;
 }
 
+/* Dark mode fallbacks - Telegram SDK will override via bindCssVars */
+.dark {
+  --tg-theme-bg-color: #1a1a1a;
+  --tg-theme-text-color: #ffffff;
+  --tg-theme-hint-color: #8e8e93;
+  --tg-theme-link-color: #64b5f6;
+  --tg-theme-button-color: #22c55e;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-secondary-bg-color: #2c2c2e;
+}
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -76,6 +87,15 @@ body {
   @apply bg-water-blue-100 text-water-blue-900 rounded-br-sm ml-auto;
 }
 
+/* Dark mode message bubbles */
+.dark .message-bubble-plant {
+  @apply bg-plant-green-900/30 text-plant-green-100;
+}
+
+.dark .message-bubble-user {
+  @apply bg-water-blue-900/30 text-water-blue-100;
+}
+
 /* Plant status indicators */
 .status-ok {
   @apply bg-plant-green-100 text-plant-green-700;
@@ -91,6 +111,23 @@ body {
 
 .status-critical {
   @apply bg-red-100 text-red-700;
+}
+
+/* Dark mode status indicators */
+.dark .status-ok {
+  @apply bg-plant-green-900/30 text-plant-green-400;
+}
+
+.dark .status-soon {
+  @apply bg-yellow-900/30 text-yellow-400;
+}
+
+.dark .status-overdue {
+  @apply bg-orange-900/30 text-orange-400;
+}
+
+.dark .status-critical {
+  @apply bg-red-900/30 text-red-400;
 }
 
 /* Animations */
@@ -112,6 +149,21 @@ body {
 .animate-wave {
   animation: wave 2s ease-in-out infinite;
   transform-origin: bottom center;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }
 
 /* Safe area for mobile */
@@ -144,4 +196,36 @@ body {
 
 .plant-card:active {
   @apply scale-[0.98];
+}
+
+/* Dark mode specific overrides for plant-green backgrounds */
+.dark .bg-plant-green-100 {
+  @apply bg-plant-green-900/30;
+}
+
+.dark .bg-plant-green-50 {
+  @apply bg-plant-green-900/20;
+}
+
+/* Dark mode for gray backgrounds */
+.dark .bg-gray-100 {
+  @apply bg-gray-800;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+/* Dark mode borders */
+.dark .border-gray-100 {
+  @apply border-gray-700;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-600;
+}
+
+/* Navigation dark mode */
+.dark nav {
+  @apply border-gray-700;
 }

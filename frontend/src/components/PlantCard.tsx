@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Droplets, MessageCircle, Leaf } from 'lucide-react';
 import type { Plant } from '@/types';
-import { hapticFeedback } from '@/utils/telegram';
+import { useTelegramHaptic } from '@/hooks/telegram';
 
 interface PlantCardProps {
   plant: Plant;
@@ -31,10 +31,11 @@ const personalityEmojis = {
 
 export default function PlantCard({ plant }: PlantCardProps) {
   const navigate = useNavigate();
+  const haptic = useTelegramHaptic();
   const status = plant.wateringStatus?.status || 'ok';
 
   const handleClick = () => {
-    hapticFeedback('selection');
+    haptic('selection');
     navigate(`/plant/${plant.id}`);
   };
 

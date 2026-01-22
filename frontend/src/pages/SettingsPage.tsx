@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bell, BellOff, Clock, Globe, Info, ExternalLink } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
-import { hapticFeedback } from '@/utils/telegram';
+import { useTelegramHaptic, useTelegramLinks } from '@/hooks/telegram';
 import * as api from '@/utils/api';
 
 const timezones = [
@@ -19,13 +19,15 @@ const timezones = [
 
 export default function SettingsPage() {
   const { user, fetchUser } = useStore();
+  const haptic = useTelegramHaptic();
+  const { openLink, openTelegramLink } = useTelegramLinks();
   const [isSaving, setIsSaving] = useState(false);
   const [showTimezoneModal, setShowTimezoneModal] = useState(false);
 
   const handleToggleNotifications = async () => {
     if (!user) return;
 
-    hapticFeedback('medium');
+    haptic('medium');
     setIsSaving(true);
 
     try {
@@ -33,9 +35,9 @@ export default function SettingsPage() {
         notificationsEnabled: !user.notificationsEnabled,
       });
       await fetchUser();
-      hapticFeedback('success');
+      haptic('success');
     } catch {
-      hapticFeedback('error');
+      haptic('error');
     } finally {
       setIsSaving(false);
     }
@@ -44,16 +46,16 @@ export default function SettingsPage() {
   const handleTimezoneChange = async (timezone: string) => {
     if (!user) return;
 
-    hapticFeedback('selection');
+    haptic('selection');
     setShowTimezoneModal(false);
     setIsSaving(true);
 
     try {
       await api.updateUserSettings({ timezone });
       await fetchUser();
-      hapticFeedback('success');
+      haptic('success');
     } catch {
-      hapticFeedback('error');
+      haptic('error');
     } finally {
       setIsSaving(false);
     }
@@ -117,7 +119,7 @@ export default function SettingsPage() {
 
         <button
           onClick={() => {
-            hapticFeedback('light');
+            haptic('light');
             setShowTimezoneModal(true);
           }}
           className="w-full tg-card flex items-center gap-4"
@@ -156,24 +158,20 @@ export default function SettingsPage() {
           </p>
 
           <div className="flex gap-2">
-            <a
-              href="https://t.me/stoneflower_support"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => openTelegramLink('https://t.me/stoneflower_support')}
               className="flex-1 py-2 px-4 rounded-xl bg-tg-secondary-bg text-center text-sm font-medium flex items-center justify-center gap-2"
             >
               <Info className="w-4 h-4" />
               Поддержка
-            </a>
-            <a
-              href="https://github.com/stoneflower"
-              target="_blank"
-              rel="noopener noreferrer"
+            </button>
+            <button
+              onClick={() => openLink('https://github.com/stoneflower')}
               className="flex-1 py-2 px-4 rounded-xl bg-tg-secondary-bg text-center text-sm font-medium flex items-center justify-center gap-2"
             >
               <ExternalLink className="w-4 h-4" />
               GitHub
-            </a>
+            </button>
           </div>
         </div>
       </div>
@@ -181,8 +179,8 @@ export default function SettingsPage() {
       {/* Timezone modal */}
       {showTimezoneModal && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-          <div className="bg-white w-full max-h-[70vh] rounded-t-3xl overflow-hidden animate-slide-up">
-            <div className="px-4 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="bg-white dark:bg-tg-secondary-bg w-full max-h-[70vh] rounded-t-3xl overflow-hidden animate-slide-up">
+            <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
               <h3 className="font-semibold text-lg">Часовой пояс</h3>
               <button
                 onClick={() => setShowTimezoneModal(false)}
@@ -196,8 +194,8 @@ export default function SettingsPage() {
                 <button
                   key={tz.id}
                   onClick={() => handleTimezoneChange(tz.id)}
-                  className={`w-full px-4 py-4 text-left border-b border-gray-50 flex items-center justify-between ${
-                    user?.timezone === tz.id ? 'bg-plant-green-50' : ''
+                  className={`w-full px-4 py-4 text-left border-b border-gray-50 dark:border-gray-700 flex items-center justify-between ${
+                    user?.timezone === tz.id ? 'bg-plant-green-50 dark:bg-plant-green-900/20' : ''
                   }`}
                 >
                   <span>{tz.name}</span>

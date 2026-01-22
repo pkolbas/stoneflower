@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useStore } from '@/hooks/useStore';
-import { initTelegramApp } from '@/utils/telegram';
+import { useTelegram } from '@/providers/TelegramProvider';
 import HomePage from '@/pages/HomePage';
 import PlantPage from '@/pages/PlantPage';
 import AddPlantPage from '@/pages/AddPlantPage';
@@ -10,18 +10,27 @@ import Navigation from '@/components/Navigation';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
 function App() {
+  const { isReady } = useTelegram();
   const { fetchUser, fetchPlants, fetchSpecies, isLoadingUser, isLoadingPlants, user, plants, error, clearError } = useStore();
 
   useEffect(() => {
-    // Initialize Telegram WebApp
-    initTelegramApp();
+    if (!isReady) return;
 
     // Fetch initial data
     fetchUser();
     fetchPlants();
     fetchSpecies();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isReady]);
+
+  // Wait for Telegram to be ready
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-tg-bg">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   // Show loading state only on initial load, not on subsequent refreshes
   const isInitialLoading = (isLoadingUser && !user) || (isLoadingPlants && plants.length === 0);

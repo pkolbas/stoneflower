@@ -3,10 +3,11 @@ import { Plus, Droplets, Leaf } from 'lucide-react';
 import { useStore } from '@/hooks/useStore';
 import PlantCard from '@/components/PlantCard';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { hapticFeedback } from '@/utils/telegram';
+import { useTelegramHaptic } from '@/hooks/telegram';
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const haptic = useTelegramHaptic();
   const { plants, isLoadingPlants, user } = useStore();
 
   // Calculate stats
@@ -17,7 +18,7 @@ export default function HomePage() {
   );
 
   const handleAddPlant = () => {
-    hapticFeedback('light');
+    haptic('light');
     navigate('/add');
   };
 
