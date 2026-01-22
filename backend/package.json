@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Backend for Stoneflower - Telegram Mini App for plant care",
   "main": "dist/index.js",
+  "type": "module",
+  "prisma": {
+    "seed": "node dist/seed.js"
+  },
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
