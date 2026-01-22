@@ -218,13 +218,13 @@ export default function AddPlantPage() {
           <div>
             {/* Search */}
             <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-tg-hint" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-tg-hint" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Поиск растения..."
-                className="tg-input pl-10"
+                className="tg-input !pl-12"
               />
             </div>
 
