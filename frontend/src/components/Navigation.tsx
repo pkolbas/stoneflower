@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Plus, Settings } from 'lucide-react';
-import { hapticFeedback } from '@/utils/telegram';
+import { useTelegramHaptic } from '@/hooks/telegram';
 
 export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
+  const haptic = useTelegramHaptic();
 
   const navItems = [
     { path: '/', icon: Home, label: 'Главная' },
@@ -13,7 +14,7 @@ export default function Navigation() {
   ];
 
   const handleNavClick = (path: string) => {
-    hapticFeedback('light');
+    haptic('light');
     navigate(path);
   };
 
