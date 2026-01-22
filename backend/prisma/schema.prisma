@@ -36,8 +36,8 @@ model PlantSpecies {
 
   // Care requirements
   wateringFrequencyDays Int      @default(7)
-  wateringWinterMultiplier Float @default(0.75)
-  wateringSummerMultiplier Float @default(1.25)
+  wateringWinterMultiplier Float @default(1.5)
+  wateringSummerMultiplier Float @default(0.8)
 
   lightLevel          LightLevel @default(MEDIUM)
   humidityLevel       HumidityLevel @default(MEDIUM)

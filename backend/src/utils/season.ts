@@ -4,12 +4,14 @@ export function getCurrentSeason(date: Date = new Date()): Season {
   const month = date.getMonth(); // 0-11
 
   // Northern hemisphere seasons
+  // Multiplier > 1 = longer interval (less watering)
+  // Multiplier < 1 = shorter interval (more watering)
   if (month >= 11 || month <= 1) {
-    return { name: 'winter', wateringMultiplier: 0.75 };
+    return { name: 'winter', wateringMultiplier: 1.5 };  // Water less in winter
   } else if (month >= 2 && month <= 4) {
     return { name: 'spring', wateringMultiplier: 1.0 };
   } else if (month >= 5 && month <= 7) {
-    return { name: 'summer', wateringMultiplier: 1.25 };
+    return { name: 'summer', wateringMultiplier: 0.75 }; // Water more in summer
   } else {
     return { name: 'autumn', wateringMultiplier: 1.0 };
   }
